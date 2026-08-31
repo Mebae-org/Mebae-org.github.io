@@ -1,0 +1,12 @@
+---
+import Base from '../layouts/Base.astro';
+import MathDemo from '../components/MathDemo.mdx';
+---
+
+<Base title="Mebae — 表示確認">
+  <h1>Mebae へようこそ</h1>
+  <p>これは仮のトップページです。ビルドと数式の表示を確認するために用意しました。</p>
+
+  <!-- MDX 経由で remark-math + rehype-katex により $$ 記法が KaTeX でレンダリングされる -->
+  <MathDemo />
+</Base>
