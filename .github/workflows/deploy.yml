@@ -34,6 +34,30 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # courses.json を読み、各科目のコンテンツを
+      # src/content/lessons/<id> にチェックアウトする。
+      # matrix は使わず単一ジョブ内でループする（成果物を1つにまとめるため）。
+      - name: Fetch course content
+        env:
+          # 非公開の教材リポジトリを取得する場合は CONTENT_PAT を設定。
+          # 公開リポジトリのみなら GITHUB_TOKEN で足りる。
+          CONTENT_TOKEN: ${{ secrets.CONTENT_PAT || github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p src/content/lessons
+          # 各科目: id / repo(省略時は Mebae-org/<id>) / branch(省略時は main)
+          jq -r '.[] | [.id, (.repo // ("Mebae-org/" + .id)), (.branch // "main")] | @tsv' courses.json \
+          | while IFS=$'\t' read -r id repo branch; do
+              echo "::group::Fetching '${id}' from ${repo}@${branch}"
+              rm -rf "src/content/lessons/${id}"
+              git clone --depth 1 --branch "${branch}" \
+                "https://x-access-token:${CONTENT_TOKEN}@github.com/${repo}.git" \
+                "src/content/lessons/${id}"
+              # 教材リポジトリの git 履歴は成果物に不要
+              rm -rf "src/content/lessons/${id}/.git"
+              echo "::endgroup::"
+            done
+
       - name: Build
         run: pnpm build
 

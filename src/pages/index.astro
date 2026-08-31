@@ -1,12 +1,32 @@
 ---
 import Base from '../layouts/Base.astro';
-import MathDemo from '../components/MathDemo.mdx';
+import { getCollection } from 'astro:content';
+import courses from '../../courses.json';
+
+// 科目ごとのレッスン数を集計（subject で科目を区別）
+const lessons = await getCollection('lessons');
+const lessonCount = new Map<string, number>();
+for (const lesson of lessons) {
+  const subject = lesson.data.subject;
+  lessonCount.set(subject, (lessonCount.get(subject) ?? 0) + 1);
+}
+
+// courses.json を order 昇順に並べる
+const sortedCourses = [...courses].sort((a, b) => a.order - b.order);
 ---
 
-<Base title="Mebae — 表示確認">
-  <h1>Mebae へようこそ</h1>
-  <p>これは仮のトップページです。ビルドと数式の表示を確認するために用意しました。</p>
+<Base title="Mebae — 科目一覧">
+  <h1>Mebae 科目一覧</h1>
+  <p>学びたい科目を選んでください。</p>
 
-  <!-- MDX 経由で remark-math + rehype-katex により $$ 記法が KaTeX でレンダリングされる -->
-  <MathDemo />
+  <ul>
+    {
+      sortedCourses.map((course) => (
+        <li>
+          <strong>{course.title}</strong>
+          <span>（レッスン数: {lessonCount.get(course.id) ?? 0}）</span>
+        </li>
+      ))
+    }
+  </ul>
 </Base>
