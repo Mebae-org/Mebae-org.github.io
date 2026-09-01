@@ -1,42 +1,33 @@
 ---
 import Base from '../layouts/Base.astro';
-import courses from '../../courses.json';
-import { getChapters } from '../lib/lessons';
-
-const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-
-// courses.json を order 昇順に並べ、各科目の章一覧を添える
-const sortedCourses = [...courses].sort((a, b) => a.order - b.order);
-const courseChapters = await Promise.all(
-  sortedCourses.map(async (course) => ({
-    course,
-    chapters: await getChapters(course.id),
-  })),
-);
+// 科目一覧はサイドバー（Base.astro）に表示するため、トップ本文は概要のみ。
 ---
 
-<Base title="Mebae — 科目一覧">
-  <h1>Mebae 科目一覧</h1>
-  <p>学びたい科目を選んでください。</p>
+<Base title="Mebae">
+  <h1>Mebae</h1>
+  <p>
+    Mebae
+    は、学生のための教材・課題・演習をまとめて提供するプロジェクトです。学びの芽（めばえ）を育てることを目指し、誰もが手を動かしながら学べる環境づくりを進めています。
+  </p>
 
-  {
-    courseChapters.map(({ course, chapters }) => (
-      <section>
-        <h2>{course.title}</h2>
-        {chapters.length === 0 ? (
-          <p>準備中です。</p>
-        ) : (
-          <ul>
-            {chapters.map((chapter) => (
-              <li>
-                <a href={`${base}/${chapter.subject}/${chapter.chapterId}`}>
-                  {chapter.title}
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    ))
-  }
+  <h2>これは何</h2>
+  <ul>
+    <li>
+      <strong>MCC 対応の演習教材</strong>
+      です。カリキュラムに沿って、段階的に学べるように構成されています。
+    </li>
+    <li>
+      <strong>誰でも fork して進められます。</strong>
+      自分のリポジトリに複製すれば、自分のペースで課題に取り組めます。
+    </li>
+    <li>
+      <strong>採点は GitHub Actions で動きます。</strong>
+      提出された内容は自動でチェックされ、フィードバックが得られます。
+    </li>
+  </ul>
+
+  <h2>進行中</h2>
+  <p>
+    現在このプロジェクトは準備中です。教材や演習を順次追加していきますので、公開までしばらくお待ちください。
+  </p>
 </Base>

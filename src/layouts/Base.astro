@@ -1,12 +1,31 @@
 ---
-// 最小限のベースレイアウト。KaTeX の CSS を読み込む。
+// サイト共通レイアウト（orderedlist "Minimal" テーマ風の 2 カラム）。
+// KaTeX の CSS を読み込む。
 import 'katex/dist/katex.min.css';
+import courses from '../../courses.json';
+import { getChapters } from '../lib/lessons';
 
 interface Props {
   title?: string;
 }
 
 const { title = 'Mebae' } = Astro.props;
+
+const home = import.meta.env.BASE_URL;
+const base = home.replace(/\/$/, '');
+const orgUrl = 'https://github.com/Mebae-org';
+const pageTitle = title === 'Mebae' ? 'Mebae' : `${title} — Mebae`;
+
+// 科目ナビはサイドバーに表示する（全ページ共通）
+const sortedCourses = [...courses].sort((a, b) => a.order - b.order);
+const courseChapters = await Promise.all(
+  sortedCourses.map(async (course) => ({
+    course,
+    chapters: await getChapters(course.id),
+  })),
+);
+const hasNav = courseChapters.some((c) => c.chapters.length > 0);
+const current = Astro.url.pathname.replace(/\/$/, '');
 ---
 
 <!doctype html>
@@ -14,11 +33,421 @@ const { title = 'Mebae' } = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
+    <meta name="description" content="学生のための教材・課題・演習をまとめて提供するプロジェクト" />
+    <title>{pageTitle}</title>
   </head>
   <body>
-    <main>
-      <slot />
-    </main>
+    <div class="layout">
+      <header class="sidebar">
+        <h1 class="sidebar__title"><a href={home}>Mebae</a></h1>
+        <p class="sidebar__tagline">学生のための教材・課題・演習など</p>
+        <a class="sidebar__gh" href={orgUrl}>
+          View the Project on GitHub
+          <span class="sidebar__gh-repo">Mebae-org</span>
+        </a>
+
+        {
+          hasNav && (
+            <nav class="sidebar__nav">
+              <h2 class="sidebar__nav-title">科目</h2>
+              {courseChapters.map(
+                ({ course, chapters }) =>
+                  chapters.length > 0 && (
+                    <div class="sidebar__course">
+                      <span class="sidebar__course-title">{course.title}</span>
+                      <ul>
+                        {chapters.map((chapter) => {
+                          const href = `${base}/${chapter.subject}/${chapter.chapterId}`;
+                          const active = current === href.replace(/\/$/, '');
+                          return (
+                            <li>
+                              <a
+                                href={href}
+                                class={active ? 'is-active' : undefined}
+                                aria-current={active ? 'page' : undefined}
+                              >
+                                {chapter.title}
+                              </a>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ),
+              )}
+            </nav>
+          )
+        }
+      </header>
+
+      <main class="content">
+        <slot />
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <p>This project is maintained by <a href={orgUrl}>Mebae-org</a></p>
+      <p>Hosted on GitHub Pages</p>
+    </footer>
+
+    <style is:global>
+      :root {
+        --accent: #267cb9;
+        --text: #333;
+        --muted: #9d9d9d;
+        --heading: #222;
+        --border: #e5e5e5;
+        --bg: #ffffff;
+        --soft: #fafafa;
+        --code-bg: #f6f8fa;
+        --ok: #2e7d32;
+        --ok-bg: #edf7ed;
+        --ng: #c62828;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Hiragino Sans',
+          'Noto Sans JP', Meiryo, Arial, sans-serif;
+        line-height: 1.75;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+
+      /* ---- レイアウト ---- */
+      .layout {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem 1rem;
+        display: flex;
+        gap: 3rem;
+        align-items: flex-start;
+      }
+
+      .sidebar {
+        width: 250px;
+        flex: none;
+        position: sticky;
+        top: 3rem;
+      }
+      .sidebar__title {
+        font-size: 2.4rem;
+        font-weight: 700;
+        line-height: 1.1;
+        margin: 0 0 0.4rem;
+      }
+      .sidebar__title a {
+        color: var(--accent);
+      }
+      .sidebar__tagline {
+        color: var(--muted);
+        font-size: 0.95rem;
+        margin: 0 0 1.5rem;
+      }
+      .sidebar__gh {
+        display: inline-block;
+        font-weight: 600;
+      }
+      .sidebar__gh-repo {
+        display: block;
+        color: var(--muted);
+        font-weight: 400;
+        font-size: 0.8rem;
+        margin-top: 0.1rem;
+      }
+
+      /* サイドバーの科目ナビ */
+      .sidebar__nav {
+        margin-top: 2rem;
+        border-top: 1px solid var(--border);
+        padding-top: 1.2rem;
+      }
+      .sidebar__nav-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 0.8rem;
+      }
+      .sidebar__course {
+        margin-bottom: 1rem;
+      }
+      .sidebar__course-title {
+        display: block;
+        font-weight: 600;
+        color: var(--heading);
+        font-size: 0.9rem;
+        margin-bottom: 0.3rem;
+      }
+      .sidebar__nav ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .sidebar__nav li {
+        margin: 0.15rem 0;
+      }
+      .sidebar__nav li a {
+        display: block;
+        padding: 0.15rem 0.5rem;
+        border-left: 2px solid transparent;
+        color: var(--text);
+        font-size: 0.9rem;
+        border-radius: 0 4px 4px 0;
+      }
+      .sidebar__nav li a:hover {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .sidebar__nav li a.is-active {
+        border-left-color: var(--accent);
+        color: var(--accent);
+        background: #eef5fb;
+        font-weight: 600;
+      }
+
+      .content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .site-footer {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 1.5rem 1.5rem 3rem;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .site-footer p {
+        margin: 0.2rem 0;
+      }
+
+      @media (max-width: 768px) {
+        .layout {
+          flex-direction: column;
+          gap: 1.5rem;
+          padding-top: 2rem;
+        }
+        .sidebar {
+          position: static;
+          width: auto;
+        }
+      }
+
+      /* ---- コンテンツ本文 ---- */
+      .content h1 {
+        font-size: 2rem;
+        color: var(--heading);
+        margin: 0 0 1rem;
+      }
+      .content h2 {
+        font-size: 1.5rem;
+        color: var(--heading);
+        margin: 2.2rem 0 0.8rem;
+      }
+      .content h3 {
+        font-size: 1.2rem;
+        color: var(--heading);
+        margin: 1.6rem 0 0.6rem;
+      }
+      .content p {
+        margin: 0 0 1rem;
+      }
+      .content ul,
+      .content ol {
+        margin: 0 0 1rem;
+        padding-left: 1.5rem;
+      }
+      .content li {
+        margin: 0.3rem 0;
+      }
+      .content blockquote {
+        margin: 1rem 0;
+        padding: 0.5rem 1rem;
+        border-left: 4px solid var(--border);
+        background: var(--soft);
+        color: #555;
+      }
+      .content hr {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 2rem 0;
+      }
+      .content code {
+        background: var(--code-bg);
+        padding: 0.15em 0.4em;
+        border-radius: 4px;
+        font-size: 0.9em;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      .content pre {
+        background: var(--code-bg);
+        padding: 1rem;
+        border-radius: 6px;
+        overflow-x: auto;
+      }
+      .content pre code {
+        background: none;
+        padding: 0;
+      }
+
+      /* details（解答の折りたたみ） */
+      .content details {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        margin: 1rem 0;
+        background: var(--soft);
+      }
+      .content summary {
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--accent);
+      }
+
+      /* task list（- [ ]） */
+      .content .contains-task-list {
+        list-style: none;
+        padding-left: 0.2rem;
+      }
+      .content input[type='checkbox'] {
+        margin-right: 0.5rem;
+      }
+
+      /* 幅の広い数式は横スクロール */
+      .content .katex-display {
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0.3rem 0;
+      }
+
+      /* ---- Quiz ---- */
+      .quiz {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1.2rem 1.5rem;
+        margin: 1rem 0;
+      }
+      .quiz__meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 0.8rem;
+      }
+      .quiz__prompt {
+        margin-bottom: 1rem;
+      }
+      .quiz__prompt strong {
+        margin-right: 0.5rem;
+        color: var(--accent);
+      }
+      .quiz__choices {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1rem;
+        display: grid;
+        gap: 0.5rem;
+      }
+      .quiz__choice {
+        width: 100%;
+        text-align: left;
+        padding: 0.6rem 0.9rem;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: #fff;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+      }
+      .quiz__choice:hover:not(:disabled) {
+        border-color: var(--accent);
+      }
+      .quiz__choice.is-picked {
+        border-color: var(--accent);
+        background: #eef5fb;
+      }
+      .quiz__choice.is-answer {
+        border-color: var(--ok);
+        background: var(--ok-bg);
+      }
+      .quiz__input {
+        width: 100%;
+        padding: 0.6rem 0.9rem;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font: inherit;
+        margin-bottom: 1rem;
+      }
+      .quiz button:not(.quiz__choice) {
+        font: inherit;
+        cursor: pointer;
+        border: none;
+        border-radius: 6px;
+        padding: 0.55rem 1.2rem;
+        background: var(--accent);
+        color: #fff;
+      }
+      .quiz button:not(.quiz__choice):hover {
+        opacity: 0.9;
+      }
+      .quiz__feedback {
+        margin-top: 1rem;
+      }
+      .quiz__feedback .is-correct {
+        color: var(--ok);
+        font-weight: 700;
+      }
+      .quiz__feedback .is-wrong {
+        color: var(--ng);
+        font-weight: 700;
+      }
+      .quiz__explanation {
+        background: var(--soft);
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        margin: 0.8rem 0;
+      }
+      .quiz--result {
+        text-align: center;
+      }
+      .quiz__score {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin: 0.5rem 0;
+      }
+      .quiz__best {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      /* ---- 課題 ---- */
+      .assignment {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem 1.5rem;
+        margin: 1rem 0;
+      }
+      .assignment__submit a {
+        font-weight: 600;
+      }
+    </style>
   </body>
 </html>
