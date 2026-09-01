@@ -1,79 +1,21 @@
 ---
-import Base from '../../layouts/Base.astro';
-import { render } from 'astro:content';
-import { getChapters } from '../../lib/lessons';
-import { getExercises } from '../../lib/exercises';
-import { getAssignments } from '../../lib/assignments';
-import Quiz from '../../components/Quiz.tsx';
+import LessonSection from '../../components/LessonSection.astro';
+import { getChapterRootSection, getChapters } from '../../lib/lessons';
 
 export async function getStaticPaths() {
   const chapters = await getChapters();
-  return chapters.map((chapter) => ({
-    params: { subject: chapter.subject, chapter: chapter.chapterId },
-    props: { chapter },
-  }));
+  return chapters.flatMap((chapter) => {
+    const section = getChapterRootSection(chapter);
+    return section
+      ? [{
+          params: { subject: chapter.subject, chapter: chapter.chapterId },
+          props: { chapter, section },
+        }]
+      : [];
+  });
 }
 
-const { chapter } = Astro.props;
-
-// docs 配下の各節を sectionOrder 順にレンダリング。
-// remark-lesson が各節の H1 を除去し、title に格納している。
-const sections = await Promise.all(
-  chapter.sections.map(async (entry) => {
-    const { Content, remarkPluginFrontmatter } = await render(entry);
-    return { Content, title: remarkPluginFrontmatter.title as string | undefined };
-  }),
-);
-
-const pageTitle = sections[0]?.title ?? chapter.title;
-
-// 演習（自動判定あり）と課題（自動判定なし）を build 時に取得
-const exercises = getExercises(chapter.subject, chapter.chapterId);
-const assignments = getAssignments(chapter.subject, chapter.chapterId);
+const { chapter, section } = Astro.props;
 ---
 
-<Base title={pageTitle}>
-  <article>
-    <h1>{pageTitle}</h1>
-    {
-      sections.map(({ Content, title }, i) => (
-        <section>
-          {i > 0 && title && <h2>{title}</h2>}
-          <Content />
-        </section>
-      ))
-    }
-
-    {
-      exercises.length > 0 && (
-        <section class="exercises">
-          <h2>演習</h2>
-          <Quiz
-            client:visible
-            problems={exercises}
-            subject={chapter.subject}
-            chapter={chapter.chapterId}
-          />
-        </section>
-      )
-    }
-
-    {
-      assignments.length > 0 && (
-        <section class="assignments">
-          <h2>課題</h2>
-          {assignments.map((assignment) => (
-            <div class="assignment">
-              <Fragment set:html={assignment.bodyHtml} />
-              <p class="assignment__submit">
-                <a href={assignment.issueUrl} target="_blank" rel="noopener noreferrer">
-                  この課題を提出する（Issue を作成）
-                </a>
-              </p>
-            </div>
-          ))}
-        </section>
-      )
-    }
-  </article>
-</Base>
+<LessonSection chapter={chapter} section={section} />

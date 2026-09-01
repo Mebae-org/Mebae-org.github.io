@@ -1,0 +1,29 @@
+---
+import LessonSection from '../../../components/LessonSection.astro';
+import {
+  getChapterRootSection,
+  getChapters,
+  getSectionSlug,
+} from '../../../lib/lessons';
+
+export async function getStaticPaths() {
+  const chapters = await getChapters();
+  return chapters.flatMap((chapter) => {
+    const rootSection = getChapterRootSection(chapter);
+    return chapter.sections
+      .filter((section) => section.id !== rootSection?.id)
+      .map((section) => ({
+        params: {
+          subject: chapter.subject,
+          chapter: chapter.chapterId,
+          section: getSectionSlug(section),
+        },
+        props: { chapter, section },
+      }));
+  });
+}
+
+const { chapter, section } = Astro.props;
+---
+
+<LessonSection chapter={chapter} section={section} />

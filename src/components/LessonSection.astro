@@ -1,0 +1,111 @@
+---
+import Base from '../layouts/Base.astro';
+import { render } from 'astro:content';
+import { getAssignments } from '../lib/assignments';
+import { getExercises } from '../lib/exercises';
+import {
+  getChapterRootSection,
+  getSectionSlug,
+  type Chapter,
+  type LessonEntry,
+} from '../lib/lessons';
+import Quiz from './Quiz.tsx';
+
+interface Props {
+  chapter: Chapter;
+  section: LessonEntry;
+}
+
+const { chapter, section } = Astro.props;
+const { Content, remarkPluginFrontmatter } = await render(section);
+const pageTitle = (remarkPluginFrontmatter.title as string | undefined) ?? chapter.title;
+const sectionIndex = chapter.sections.findIndex((entry) => entry.id === section.id);
+const isLastSection = sectionIndex === chapter.sections.length - 1;
+const exercises = isLastSection ? getExercises(chapter.subject, chapter.chapterId) : [];
+const assignments = isLastSection ? getAssignments(chapter.subject, chapter.chapterId) : [];
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const rootSection = getChapterRootSection(chapter);
+const sectionHref = (entry: LessonEntry) =>
+  entry.id === rootSection?.id
+    ? `${base}/${chapter.subject}/${chapter.chapterId}`
+    : `${base}/${chapter.subject}/${chapter.chapterId}/${getSectionSlug(entry)}`;
+const sectionName = (entry: LessonEntry) => getSectionSlug(entry).split('/').at(-1) ?? 'index';
+---
+
+<Base title={pageTitle}>
+  <article>
+    <h1>{pageTitle}</h1>
+    <Content />
+
+    {
+      exercises.length > 0 && (
+        <section class="exercises">
+          <h2>演習</h2>
+          <Quiz
+            client:visible
+            problems={exercises}
+            subject={chapter.subject}
+            chapter={chapter.chapterId}
+          />
+        </section>
+      )
+    }
+
+    {
+      assignments.length > 0 && (
+        <section class="assignments">
+          <h2>課題</h2>
+          {assignments.map((assignment) => (
+            <div class="assignment">
+              <Fragment set:html={assignment.bodyHtml} />
+              <p class="assignment__submit">
+                <a href={assignment.issueUrl} target="_blank" rel="noopener noreferrer">
+                  この課題を提出する（Issue を作成）
+                </a>
+              </p>
+            </div>
+          ))}
+        </section>
+      )
+    }
+
+    <nav class="section-nav" aria-label="章内のページ">
+      {
+        chapter.sections.map((entry, index) => (
+          <>
+            {entry.id === section.id ? (
+              <span class="section-nav__current" aria-current="page">{sectionName(entry)}</span>
+            ) : (
+              <a href={sectionHref(entry)}>{sectionName(entry)}</a>
+            )}
+            {index < chapter.sections.length - 1 && (
+              <span class="section-nav__separator" aria-hidden="true">\</span>
+            )}
+          </>
+        ))
+      }
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .section-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.9rem;
+  }
+
+  .section-nav__current {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .section-nav__separator {
+    color: var(--muted);
+  }
+</style>

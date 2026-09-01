@@ -41,6 +41,16 @@ export interface Chapter {
   sections: LessonEntry[];
 }
 
+/** コレクション ID から docs 配下の拡張子なし相対パスを返す。 */
+export function getSectionSlug(entry: LessonEntry): string {
+  return entry.id.split('/docs/')[1] ?? 'index';
+}
+
+/** 章 URL で表示する節。index.md がなければ先頭の節を使う。 */
+export function getChapterRootSection(chapter: Chapter): LessonEntry | undefined {
+  return chapter.sections.find((entry) => getSectionSlug(entry) === 'index') ?? chapter.sections[0];
+}
+
 /**
  * lessons コレクションを章単位に集約する。
  * docs 配下の複数ファイルは 1 つの章にまとめ、sectionOrder 順に並べる。
