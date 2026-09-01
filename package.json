@@ -13,13 +13,23 @@
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.6",
+    "@astrojs/react": "^6.0.4",
     "astro": "^5.14.1",
     "katex": "^0.16.23",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "rehype-katex": "^7.0.1",
-    "remark-math": "^6.0.0"
+    "rehype-stringify": "^10.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
     "typescript": "^5.9.3"
   }
 }

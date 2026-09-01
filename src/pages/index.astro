@@ -1,32 +1,42 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getCollection } from 'astro:content';
 import courses from '../../courses.json';
+import { getChapters } from '../lib/lessons';
 
-// 科目ごとのレッスン数を集計（subject で科目を区別）
-const lessons = await getCollection('lessons');
-const lessonCount = new Map<string, number>();
-for (const lesson of lessons) {
-  const subject = lesson.data.subject;
-  lessonCount.set(subject, (lessonCount.get(subject) ?? 0) + 1);
-}
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-// courses.json を order 昇順に並べる
+// courses.json を order 昇順に並べ、各科目の章一覧を添える
 const sortedCourses = [...courses].sort((a, b) => a.order - b.order);
+const courseChapters = await Promise.all(
+  sortedCourses.map(async (course) => ({
+    course,
+    chapters: await getChapters(course.id),
+  })),
+);
 ---
 
 <Base title="Mebae — 科目一覧">
   <h1>Mebae 科目一覧</h1>
   <p>学びたい科目を選んでください。</p>
 
-  <ul>
-    {
-      sortedCourses.map((course) => (
-        <li>
-          <strong>{course.title}</strong>
-          <span>（レッスン数: {lessonCount.get(course.id) ?? 0}）</span>
-        </li>
-      ))
-    }
-  </ul>
+  {
+    courseChapters.map(({ course, chapters }) => (
+      <section>
+        <h2>{course.title}</h2>
+        {chapters.length === 0 ? (
+          <p>準備中です。</p>
+        ) : (
+          <ul>
+            {chapters.map((chapter) => (
+              <li>
+                <a href={`${base}/${chapter.subject}/${chapter.chapterId}`}>
+                  {chapter.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    ))
+  }
 </Base>
