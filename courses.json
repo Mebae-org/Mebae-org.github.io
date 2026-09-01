@@ -1,3 +1,6 @@
 [
-  { "id": "basic-math", "title": "基礎数学", "order": 1 }
+  { "id": "basic-math", "title": "基礎数学", "order": 1 },
+  { "id": "calculus", "title": "微分積分", "order": 2 },
+  { "id": "linear-algebra", "title": "線形代数", "order": 3 },
+  { "id": "statistics", "title": "確率統計", "order": 4 }
 ]
