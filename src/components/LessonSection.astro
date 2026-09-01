@@ -19,10 +19,9 @@ interface Props {
 const { chapter, section } = Astro.props;
 const { Content, remarkPluginFrontmatter } = await render(section);
 const pageTitle = (remarkPluginFrontmatter.title as string | undefined) ?? chapter.title;
-const sectionIndex = chapter.sections.findIndex((entry) => entry.id === section.id);
-const isLastSection = sectionIndex === chapter.sections.length - 1;
-const exercises = isLastSection ? getExercises(chapter.subject, chapter.chapterId) : [];
-const assignments = isLastSection ? getAssignments(chapter.subject, chapter.chapterId) : [];
+const isIndexSection = getSectionSlug(section) === 'index';
+const exercises = isIndexSection ? getExercises(chapter.subject, chapter.chapterId) : [];
+const assignments = isIndexSection ? getAssignments(chapter.subject, chapter.chapterId) : [];
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const rootSection = getChapterRootSection(chapter);
