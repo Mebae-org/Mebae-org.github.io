@@ -24,8 +24,25 @@ const courseChapters = await Promise.all(
     chapters: await getChapters(course.id),
   })),
 );
-const hasNav = courseChapters.some((c) => c.chapters.length > 0);
 const current = Astro.url.pathname.replace(/\/$/, '');
+const currentSubject = current.slice(base.length).split('/').filter(Boolean)[0] ?? '';
+const categoryGroups = courseChapters
+  .filter(({ chapters }) => chapters.length > 0)
+  .reduce<
+    Array<{
+      category: string;
+      courses: (typeof courseChapters)[number][];
+    }>
+  >((groups, item) => {
+    let group = groups.find(({ category }) => category === item.course.category);
+    if (!group) {
+      group = { category: item.course.category, courses: [] };
+      groups.push(group);
+    }
+    group.courses.push(item);
+    return groups;
+  }, []);
+const hasNav = categoryGroups.length > 0;
 ---
 
 <!doctype html>
@@ -54,31 +71,38 @@ const current = Astro.url.pathname.replace(/\/$/, '');
           hasNav && (
             <nav class="sidebar__nav">
               <h2 class="sidebar__nav-title">科目</h2>
-              {courseChapters.map(
-                ({ course, chapters }) =>
-                  chapters.length > 0 && (
-                    <div class="sidebar__course">
-                      <span class="sidebar__course-title">{course.title}</span>
-                      <ul>
-                        {chapters.map((chapter) => {
-                          const href = `${base}/${chapter.subject}/${chapter.chapterId}`;
-                          const active = current === href.replace(/\/$/, '');
-                          return (
-                            <li>
-                              <a
-                                href={href}
-                                class={active ? 'is-active' : undefined}
-                                aria-current={active ? 'page' : undefined}
-                              >
-                                {chapter.title}
-                              </a>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  ),
-              )}
+              {categoryGroups.map(({ category, courses }) => (
+                <details
+                  class="sidebar__category"
+                  open={courses.some(({ course }) => course.id === currentSubject)}
+                >
+                  <summary class="sidebar__category-title">{category}</summary>
+                  <div class="sidebar__category-courses">
+                    {courses.map(({ course, chapters }) => (
+                      <details class="sidebar__course" open={course.id === currentSubject}>
+                        <summary class="sidebar__course-title">{course.title}</summary>
+                        <ul>
+                          {chapters.map((chapter) => {
+                            const href = `${base}/${chapter.subject}/${chapter.chapterId}`;
+                            const active = current === href.replace(/\/$/, '');
+                            return (
+                              <li>
+                                <a
+                                  href={href}
+                                  class={active ? 'is-active' : undefined}
+                                  aria-current={active ? 'page' : undefined}
+                                >
+                                  {chapter.title}
+                                </a>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </details>
+                    ))}
+                  </div>
+                </details>
+              ))}
             </nav>
           )
         }
@@ -147,6 +171,12 @@ const current = Astro.url.pathname.replace(/\/$/, '');
         flex: none;
         position: sticky;
         top: 3rem;
+        max-height: calc(100vh - 6rem);
+        max-height: calc(100dvh - 6rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+        padding-right: 0.75rem;
       }
       .sidebar__title {
         font-size: 2.4rem;
@@ -188,11 +218,38 @@ const current = Astro.url.pathname.replace(/\/$/, '');
         color: var(--muted);
         margin: 0 0 0.8rem;
       }
-      .sidebar__course {
+      .sidebar__category {
         margin-bottom: 1rem;
       }
+      .sidebar__category-title,
       .sidebar__course-title {
-        display: block;
+        cursor: pointer;
+      }
+      .sidebar__category-title:hover,
+      .sidebar__course-title:hover {
+        color: var(--accent);
+      }
+      .sidebar__category-title:focus-visible,
+      .sidebar__course-title:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+        border-radius: 2px;
+      }
+      .sidebar__category-title::marker,
+      .sidebar__course-title::marker {
+        color: var(--muted);
+      }
+      .sidebar__category-title {
+        color: var(--heading);
+        font-weight: 700;
+      }
+      .sidebar__category-courses {
+        margin: 0.6rem 0 0 0.8rem;
+      }
+      .sidebar__course {
+        margin-bottom: 0.65rem;
+      }
+      .sidebar__course-title {
         font-weight: 600;
         color: var(--heading);
         font-size: 0.9rem;
@@ -250,6 +307,11 @@ const current = Astro.url.pathname.replace(/\/$/, '');
         .sidebar {
           position: static;
           width: auto;
+          max-height: none;
+          overflow-y: visible;
+          overscroll-behavior: auto;
+          scrollbar-gutter: auto;
+          padding-right: 0;
         }
       }
 

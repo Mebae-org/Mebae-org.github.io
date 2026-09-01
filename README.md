@@ -44,11 +44,12 @@ src/
 
 ```json
 [
-  { "id": "basic-math", "title": "基礎数学", "order": 1 }
+  { "id": "basic-math", "title": "基礎数学", "category": "数学", "order": 1 }
 ]
 ```
 
 - 既定では教材を `Mebae-org/<id>` から取得します。
+- `category` が同じ科目は、サイドバーで同じカテゴリにまとめられます。
 - 別リポジトリ名にする場合は `"repo": "Owner/Name"`、ブランチ指定は `"branch": "..."` を追加。
 - 非公開リポジトリを使う場合は、リポジトリの Secrets に `CONTENT_PAT`（教材の read 権限を持つ PAT）を登録してください。
 
