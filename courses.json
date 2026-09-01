@@ -2,5 +2,10 @@
   { "id": "basic-math", "title": "基礎数学", "category": "数学", "order": 1 },
   { "id": "calculus", "title": "微分積分", "category": "数学", "order": 2 },
   { "id": "linear-algebra", "title": "線形代数", "category": "数学", "order": 3 },
-  { "id": "statistics", "title": "確率統計", "category": "数学", "order": 4 }
+  { "id": "statistics", "title": "確率統計", "category": "数学", "order": 4 },
+  { "id": "mechanics", "title": "力学", "category": "物理学", "order": 5 },
+  { "id": "thermodynamics", "title": "熱力学", "category": "物理学", "order": 6 },
+  { "id": "waves", "title": "波動", "category": "物理学", "order": 7 },
+  { "id": "electromagnetism", "title": "電磁気学", "category": "物理学", "order": 8 },
+  { "id": "chemistry", "title": "化学", "category": "化学", "order": 9 }
 ]
